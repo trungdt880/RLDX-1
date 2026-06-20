@@ -7,15 +7,44 @@ import torch.nn.functional as F
 from transformers.feature_extraction_utils import BatchFeature
 from transformers.utils import is_torchdynamo_compiling
 
+from rldx.model.modules.backbone.attn_fa4 import (
+    FA4_ATTN_IMPL,
+    FA4_PUBLIC_ALIASES,
+    fa4_is_supported_here,
+)
 from rldx.model.modules.backbone.modeling_vtc import VTC_Qwen3VL
 from rldx.utils.dist import rank_zero_print as _print
 
 
+def _resolve_attn_impl() -> str:
+    """Resolve ``RLDX_ATTN_IMPL`` into a concrete transformers attention key.
+
+    Production default stays on FlashAttention-2 for throughput; environments
+    that cannot build flash-attn (brand-new toolchains, CI runners with no
+    nvcc) can opt out via ``RLDX_ATTN_IMPL=sdpa`` without touching code.
+
+    Jetson Thor (sm_110, CUDA 13) selects FlashAttention-4 with
+    ``RLDX_ATTN_IMPL=flash_attention_4`` (or ``fa4``). That friendly value maps
+    onto the registered :data:`FA4_ATTN_IMPL` backend, but only behind an arch
+    guard: if FA4 is not importable or the GPU arch is unsupported we warn once
+    and fall back to ``sdpa`` so a load never hard-crashes at the first
+    attention call.
+    """
+    requested = os.environ.get("RLDX_ATTN_IMPL", "flash_attention_2")
+    if requested in FA4_PUBLIC_ALIASES:
+        if fa4_is_supported_here():
+            return FA4_ATTN_IMPL
+        _print(
+            "[w] RLDX_ATTN_IMPL requested FlashAttention-4 but it is unavailable "
+            "here (flash_attn.cute missing or unsupported GPU arch); falling back "
+            "to attn_implementation='sdpa'."
+        )
+        return "sdpa"
+    return requested
+
+
 # Default attention implementation for the Qwen3-VL backbone load.
-# Production stays on FlashAttention-2 for throughput; environments that
-# cannot build flash-attn (e.g. brand-new toolchains, CI runners with no
-# nvcc) can opt out via ``RLDX_ATTN_IMPL=sdpa`` without touching code.
-_DEFAULT_ATTN_IMPL = os.environ.get("RLDX_ATTN_IMPL", "flash_attention_2")
+_DEFAULT_ATTN_IMPL = _resolve_attn_impl()
 
 
 class VTCQwen3VLBackbone(nn.Module):

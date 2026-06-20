@@ -43,6 +43,14 @@ from transformers.models.qwen3_vl.configuration_qwen3_vl import (
 from transformers.processing_utils import Unpack
 from transformers.utils import TransformersKwargs, auto_docstring, is_torchdynamo_compiling
 from transformers.utils.deprecation import deprecate_kwarg
+
+
+try:
+    # Registered FlashAttention-4 (CuTeDSL) backend key. Importing this also
+    # registers the backend as a side effect when flash_attn.cute is present.
+    from rldx.model.modules.backbone.attn_fa4 import FA4_ATTN_IMPL
+except Exception:  # pragma: no cover - FA4 backend optional
+    FA4_ATTN_IMPL = "rldx_fa4"
 from transformers.utils.generic import check_model_inputs
 
 
@@ -216,8 +224,8 @@ class Qwen3VLVisionAttention(nn.Module):
         if self.config._attn_implementation != "eager":
             attention_interface = ALL_ATTENTION_FUNCTIONS[self.config._attn_implementation]
 
-        if self.config._attn_implementation == "flash_attention_2":
-            # Flash Attention 2: Use cu_seqlens for variable length attention
+        if self.config._attn_implementation in ("flash_attention_2", FA4_ATTN_IMPL):
+            # FlashAttention 2 / 4: use cu_seqlens for variable-length attention
             max_seqlen = (cu_seqlens[1:] - cu_seqlens[:-1]).max()
             attn_output, _ = attention_interface(
                 self,

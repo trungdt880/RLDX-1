@@ -29,7 +29,10 @@
 
 [workspace]
 channels = ["nvidia", "conda-forge"]
-platforms = ["linux-64"]
+# linux-aarch64 is for the Jetson Thor (``thor``) env only. The ``rldx`` /
+# ``inference`` features pin ``platforms = ["linux-64"]`` so their x86 cu128 /
+# cu130 wheels are never asked to resolve on aarch64 (which would fail).
+platforms = ["linux-64", "linux-aarch64"]
 
 # Workspace-level system requirement is the minimum across all features
 # (rldx ships on CUDA 12.8). The ``inference`` feature raises this to
@@ -51,6 +54,11 @@ filelock = "*"
 [environments]
 rldx = ["rldx"]
 inference = ["inference"]
+thor = ["thor"]
+
+[feature.rldx]
+# x86 only — cu128 Blackwell wheels are not published for aarch64.
+platforms = ["linux-64"]
 
 [feature.rldx.dependencies]
 # CUDA 12.8 toolkit is the build-time dependency for flash-attn's NVCC
@@ -149,6 +157,10 @@ env = { TORCH_CUDA_ARCH_LIST = "sm_120" }
 # against this env's torch + nvcc (≈10 minutes on first install).
 # ---------------------------------------------------------------------------
 
+[feature.inference]
+# x86 only — this env targets the RTX 5090 (sm_120) desktop Blackwell host.
+platforms = ["linux-64"]
+
 [feature.inference.system-requirements]
 # Inductor cu130 binaries require a host driver supporting CUDA 13+.
 # Lock the inference env to that floor explicitly so install fails
@@ -244,3 +256,99 @@ cmd = "pip install -e . --no-deps"
 
 [feature.inference.activation]
 env = { TORCH_CUDA_ARCH_LIST = "sm_120" }
+
+
+# ---------------------------------------------------------------------------
+# Jetson Thor environment (aarch64 + CUDA 13.0 + sm_110).
+#
+# Jetson AGX Thor's GPU is compute capability 11.0 (``sm_110``; it was
+# ``sm_101`` under CUDA 12.9 and was renamed ``sm_110`` in CUDA 13.0). It is a
+# datacenter-class Blackwell SM — FlashAttention-4's CuTeDSL dispatch
+# (``flash_attn/cute/interface.py``) groups compute capability 11 with 10 and
+# runs the Sm100 kernel, so FA4 works on Thor (unlike consumer ``sm_120``,
+# which lacks TMEM and is silicon-blocked from FA4).
+#
+# Unlike the FA2 source build used by ``rldx`` / ``inference``, FA4 is JIT —
+# ``flash-attn-4`` installs in seconds and compiles a per-arch kernel at first
+# call, so there is no nvcc build task and no ``FLASH_ATTN_CUDA_ARCHS``.
+# Backbone attention is selected at runtime with
+# ``RLDX_ATTN_IMPL=flash_attention_4`` (see ``backbone/adapter.py``); it falls
+# back to SDPA if FA4 is unavailable.
+#
+# Install on the device: ``pixi run -e thor postinstall``.
+# ---------------------------------------------------------------------------
+
+[feature.thor]
+# aarch64 only — this env exists solely for the Jetson Thor SoC.
+platforms = ["linux-aarch64"]
+
+[feature.thor.system-requirements]
+cuda = "13"
+
+[feature.thor.dependencies]
+cuda-toolkit = "13.0.*"
+
+[feature.thor.pypi-options]
+# cu130 wheels. NOTE: confirm the correct aarch64/Jetson torch wheel source on
+# the device — depending on JetPack this may be the PyTorch sbsa cu130 index
+# below, or an NVIDIA Jetson index (e.g. pypi.jetson-ai-lab.io). Pin
+# torch/torchvision to whatever cu130 aarch64 build resolves there.
+extra-index-urls = ["https://download.pytorch.org/whl/cu130"]
+index-strategy = "unsafe-best-match"
+
+[feature.thor.pypi-dependencies]
+# torch family: cu130 aarch64. Versions mirror the ``inference`` env; adjust to
+# the build actually published for Jetson Thor if these do not resolve
+# on-device. A few deps below (torchcodec / av / opencv) may need a Jetson
+# wheel or a source build on aarch64.
+torch = { version = "==2.10.0", index = "https://download.pytorch.org/whl/cu130" }
+torchvision = { version = "==0.25.0", index = "https://download.pytorch.org/whl/cu130" }
+torchcodec = "==0.7.0"
+transformers = "==4.57.0"
+peft = "==0.17.1"
+diffusers = "==0.35.1"
+einops = "==0.8.1"
+numpy = "==1.26.4"
+scipy = "==1.15.3"
+omegaconf = "==2.3.0"
+termcolor = "==3.2.0"
+albumentations = "==1.4.18"
+dm-tree = "==0.1.8"
+pyzmq = "==27.0.1"
+msgpack = "==1.1.0"
+msgpack-numpy = "==0.4.8"
+tyro = "==0.9.17"
+pandas = "==2.2.3"
+av = "==15.0.0"
+click = "==8.1.8"
+lmdb = "==1.7.5"
+matplotlib = "==3.10.1"
+datasets = "==3.6.0"
+gymnasium = "==1.2.2"
+wandb = "==0.23.0"
+deepspeed = "==0.17.6"
+moviepy = "==1.0.3"
+opencv-contrib-python-headless = "==4.11.0.86"
+accelerate = ">=0.34"
+safetensors = ">=0.4.5"
+huggingface-hub = ">=0.26"
+Pillow = ">=10.0"
+requests = ">=2.32"
+PyYAML = ">=6.0"
+packaging = ">=24.0"
+websockets = ">=13.0"
+# Triton ships aarch64 wheels with the matched torch; pin as a guard.
+triton = ">=3.5.0"
+# FlashAttention-4 (CuTeDSL). JIT — no nvcc build. ``[cu13]`` extra pulls the
+# CUDA 13 build of the cutlass DSL runtime it depends on.
+flash-attn-4 = { version = "*", extras = ["cu13"] }
+
+[feature.thor.tasks.postinstall]
+# Single entry point after ``pixi install -e thor``: editable-install rldx.
+# flash-attn-4 is a normal pypi dependency above (no source build step).
+cmd = "pip install -e . --no-deps"
+
+[feature.thor.activation]
+# sm_110 so torch.compile / Inductor (accelerated inference path) emits
+# Thor-native PTX/CUBIN. FA4 ignores this and JITs for the detected arch.
+env = { TORCH_CUDA_ARCH_LIST = "sm_110" }
