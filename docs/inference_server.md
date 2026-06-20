@@ -217,6 +217,62 @@ compiles fully under `--compile fullgraph`. If you need to serve any
 other flow-matching checkpoint with RTC, use `--rtc-inference-mode
 guided` and pair it with `--compile {none, submodule}`.
 
+## Transport & serialization
+
+If the networking terms above (ZeroMQ, TCP, port, msgpack) are unfamiliar,
+here is the plain version. The server and client are two **separate
+programs** — they cannot share Python variables, so data has to travel
+between them as bytes over the network.
+
+- **TCP** — the underlying network protocol: a reliable two-way *byte pipe*.
+  Bytes in one end come out the other, in order, nothing lost.
+- **Port** (e.g. `:20100`) — a numbered "door" on a machine so bytes reach the
+  right program. `127.0.0.1` (localhost) means *this same machine*; `0.0.0.0`
+  means *listen on every network interface* (for a robot dialing in from
+  another box). The server **binds** the port ("I listen here"), the client
+  **connects** to it.
+- **ZeroMQ** — a messaging library *on top of* TCP. Raw TCP is a dumb byte
+  stream; ZeroMQ adds whole-*message* send/recv and auto-reconnect. RLDX uses
+  the **REQ/REP** pattern: strict request → reply lockstep, one ask per answer.
+- **Serialization / msgpack** — a dict or numpy array lives in RAM as objects;
+  the pipe only carries bytes. Serialization converts object → bytes (and back).
+  **msgpack** is the format used here: like JSON but binary (smaller, faster).
+  Numpy arrays are not native msgpack types, so a custom hook tunnels each one
+  as an `np.save` blob (`server_client.py:65`).
+
+Round trip: `obs dict → MsgSerializer.to_bytes → bytes → ZeroMQ/TCP →
+bytes → MsgSerializer.from_bytes → obs dict`.
+
+### Two server transports
+
+The repo ships **two** server entry points. They share the bottom layers (TCP,
+msgpack) but differ in the messaging layer on top.
+
+| | ZeroMQ — `run_rldx_server.py` | WebSocket — `run_rldx_server_pi.py` |
+|---|---|---|
+| **Status** | **canonical** (all sim eval + in-tree deploy) | compatibility shim for the openpi ecosystem |
+| Transport | TCP via ZeroMQ | TCP via WebSocket (HTTP upgrade handshake first) |
+| Library | `pyzmq` | `websockets` (asyncio) |
+| Pattern | REQ/REP, strict lockstep | persistent async message frames |
+| Serializer | custom `MsgSerializer` (msgpack + `np.save` blobs + `ModalityConfig`) | `msgpack_numpy` |
+| Endpoints | `ping` `kill` `get_action` `reset` `get_modality_config` | implicit `get_action` only |
+| Default host | `127.0.0.1` (localhost) | `0.0.0.0` (all interfaces) |
+| On error | error dict in the reply | traceback frame, then close the connection |
+| In-repo client | `PolicyClient` (`server_client.py:177`) | openpi `WebsocketClientPolicy` |
+| Auth | optional API token | none |
+
+**WebSocket** rides on TCP but begins with an HTTP "upgrade this connection"
+handshake, then becomes a persistent two-way channel. The WebSocket server
+(`rldx/eval/serving/websocket_policy_server.py`) speaks the **openpi** protocol
+(Physical Intelligence's open robot stack), so a robot or sim already built
+around openpi's `WebsocketClientPolicy` can drive RLDX with no client changes.
+It is used by the CALVIN eval.
+
+**Which to use:** simulator eval and your own deployments → **ZeroMQ** (it is
+canonical, exposes the extra endpoints like `reset`/`get_modality_config`, and
+matches every script plus `droid_deploy.py` and `examples/gr1_inference/`). A
+robot or sim already speaking openpi → **WebSocket**, to reuse their client.
+
 ## Two canonical deployments
 
 ### Simulator eval

@@ -144,15 +144,20 @@ just with the LIBERO venv at
 # Setup (one-time)
 bash run_scripts/eval/gr1_tabletop/setup_gr1.sh
 
-# Single task
+# Run all 24 tabletop tasks (defaults to RLWRLD/RLDX-1-FT-GR1)
 bash run_scripts/eval/gr1_tabletop/eval_gr1.sh my_checkpoint_path
-
-# Multi-task sweep
-bash run_scripts/eval/gr1_tabletop/eval_gr1_multi.sh my_checkpoint_path
 ```
 
-GR1 uses robocasa-gr1-tabletop-tasks with the Unitree G1 embodiment.
-Pass `--embodiment-tag UNITREE_G1` to the server.
+`eval_gr1.sh` launches the server once and loops over all 24 tasks itself,
+writing results under `output_final/gr1_tabletop/<TAG>/<task>/`.
+
+GR1 uses robocasa-gr1-tabletop-tasks (Fourier GR1 humanoid, arms + waist +
+Fourier hands). The embodiment tag is **`GENERAL_EMBODIMENT`** (the same tag
+all RoboCasa-family evals use); the GR1 joint groups are selected by the
+`fourier_gr1_arms_waist` modality config, not by a GR1-specific tag.
+
+For a full process-and-data-flow trace of how this eval runs end to end, see
+[`sim_eval_walkthrough.md`](sim_eval_walkthrough.md).
 
 ## Collecting results
 
@@ -182,6 +187,9 @@ done | sort
 
 ## Where to next
 
+- [`sim_eval_walkthrough.md`](sim_eval_walkthrough.md) — end-to-end trace of
+  the two processes, the ZeroMQ round-trip, and the MultiStepWrapper chunk
+  mechanics
 - [`inference_server.md`](inference_server.md) — running the same
   `run_rldx_server.py` for real-robot deployment
 - [`training.md`](training.md) — produce the checkpoint you are
