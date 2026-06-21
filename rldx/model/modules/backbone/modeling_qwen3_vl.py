@@ -20,6 +20,8 @@
 # limitations under the License.
 
 from dataclasses import dataclass
+import functools
+import os
 from typing import Any, Callable, Optional, Union
 
 import torch
@@ -59,6 +61,31 @@ class Qwen3VLVisionMLP(nn.Module):
         return self.linear_fc2(self.act_fn(self.linear_fc1(hidden_state)))
 
 
+@functools.lru_cache(maxsize=None)
+def _half_conv3d_is_slow() -> bool:
+    """Whether half-precision Conv3d should be run in fp32 on this GPU.
+
+    On NVIDIA Jetson Thor (Blackwell, compute capability sm_11x) there is no
+    fast half-precision (bf16/fp16) 3D-convolution kernel: a bf16/fp16 conv
+    dispatches to a ~2600x slower reference path, so the vision patch-embed
+    alone costs ~6 s and dominates the entire VLA forward. The fp32 Conv3d has
+    a proper kernel (~2 ms), so on that arch we run just this one conv in fp32.
+
+    Auto-detected from the device capability; override with
+    ``RLDX_PATCHEMBED_FP32=1`` (force on) or ``=0`` (force off).
+    """
+    override = os.environ.get("RLDX_PATCHEMBED_FP32")
+    if override is not None:
+        return override == "1"
+    if not torch.cuda.is_available():
+        return False
+    try:
+        major, _ = torch.cuda.get_device_capability()
+    except Exception:
+        return False
+    return major == 11  # Jetson Thor / Blackwell-Thor
+
+
 class Qwen3VLVisionPatchEmbed(nn.Module):
     def __init__(self, config) -> None:
         super().__init__()
@@ -77,8 +104,18 @@ class Qwen3VLVisionPatchEmbed(nn.Module):
         hidden_states = hidden_states.view(
             -1, self.in_channels, self.temporal_patch_size, self.patch_size, self.patch_size
         )
-        hidden_states = self.proj(hidden_states.to(dtype=target_dtype)).view(-1, self.embed_dim)
-        return hidden_states
+        if hidden_states.is_cuda and _half_conv3d_is_slow():
+            # Thor sm_11x has no fast half-precision Conv3d; run this one conv in
+            # fp32 with autocast disabled (just casting the input is NOT enough —
+            # an enclosing autocast would re-cast the conv back to bf16). ~22x
+            # faster end-to-end on Thor, with bf16-level numerics. Uses functional
+            # conv with fp32-cast weights so the module's stored dtype is untouched.
+            with torch.autocast(device_type="cuda", enabled=False):
+                weight = self.proj.weight.float()
+                bias = self.proj.bias.float() if self.proj.bias is not None else None
+                out = F.conv3d(hidden_states.float(), weight, bias, stride=self.proj.stride)
+            return out.view(-1, self.embed_dim).to(target_dtype)
+        return self.proj(hidden_states.to(dtype=target_dtype)).view(-1, self.embed_dim)
 
 
 class Qwen3VLVisionRotaryEmbedding(nn.Module):
