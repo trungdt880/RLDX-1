@@ -40,8 +40,14 @@ dependencies = [
     "pandas==2.2.3",
     "peft==0.17.1",
     "termcolor==3.2.0",
-    "torch==2.7.0",
-    "torchvision==0.22.0",
+    # torch: x86_64 uses the PyPI CUDA wheel (2.7.0); aarch64 (Jetson Thor,
+    # sm_110) has no PyPI CUDA wheel at 2.7.0 — PyPI aarch64 wheels are
+    # CPU-only and cu128 predates sm_110 — so it pulls torch 2.9.0 from the
+    # CUDA 13 index defined in [tool.uv.sources] below.
+    "torch==2.7.0 ; platform_machine != 'aarch64'",
+    "torch==2.9.0 ; platform_machine == 'aarch64'",
+    "torchvision==0.22.0 ; platform_machine != 'aarch64'",
+    "torchvision==0.24.0 ; platform_machine == 'aarch64'",
     "transformers==4.57.0",
     "tyro==0.9.17",
     # flash-attn is a required runtime dep on every CUDA install. CPU-only
@@ -49,7 +55,9 @@ dependencies = [
     # ``uv sync --no-install-package flash-attn`` (the same flag CI uses).
     # RTX 5090 / Blackwell (sm_120) builds use the pixi environment instead
     # — see ``pixi.toml`` and ``docs/installation.md``.
-    "flash-attn==2.7.4.post1",
+    # aarch64 (Jetson Thor) has no flash-attn wheel and the 2.7.4 source
+    # predates sm_110; gate it off there and run with RLDX_ATTN_IMPL=sdpa.
+    "flash-attn==2.7.4.post1 ; platform_machine == 'x86_64'",
     "click==8.1.8",
     "datasets==3.6.0",
     "einops==0.8.1",
@@ -58,7 +66,9 @@ dependencies = [
     "numpy==1.26.4",
     "omegaconf==2.3.0",
     "scipy==1.15.3",
-    "torchcodec==0.4.0",
+    # torchcodec has no aarch64 Linux wheel at any version; gate to x86_64.
+    # On aarch64 pass a non-torchcodec --video-backend (decord/ffmpeg/opencv).
+    "torchcodec==0.4.0 ; platform_machine == 'x86_64'",
     "wandb==0.23.0",
     "pyzmq==27.0.1",
     "deepspeed==0.17.6",
@@ -116,6 +126,18 @@ include = ["rldx*"]
 
 [tool.uv.extra-build-dependencies]
 flash-attn = ["torch==2.7.0", "numpy==1.26.4"]
+
+# aarch64 (Jetson Thor, sm_110) pulls torch/torchvision from the CUDA 13
+# wheel index. ``explicit = true`` keeps every other package on PyPI; only
+# the packages mapped in [tool.uv.sources] use this index.
+[[tool.uv.index]]
+name = "pytorch-cu130"
+url = "https://download.pytorch.org/whl/cu130"
+explicit = true
+
+[tool.uv.sources]
+torch = [{ index = "pytorch-cu130", marker = "platform_machine == 'aarch64'" }]
+torchvision = [{ index = "pytorch-cu130", marker = "platform_machine == 'aarch64'" }]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
