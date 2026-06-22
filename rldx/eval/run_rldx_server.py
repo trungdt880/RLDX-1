@@ -111,6 +111,13 @@ class ServerConfig:
       fullgraph  — ``torch.compile(fullgraph=True)`` over the whole VLA
                    chain; faster steady-state latency but cannot route
                    VJP, so RTC ``guided`` mode is rejected at startup
+
+    NOTE: Path C (GraphSafe CUDA-graph capture, internal letter "C") is
+    intentionally NOT exposed here. It captures the VL input (camera frame +
+    instruction tokens) at first-call and never refreshes it on replay
+    (``_CompiledDispatcher._replay`` re-feeds the captured ``bi``), so in
+    closed-loop control the policy keeps seeing the first frame — measured
+    1.7% vs 58.3% GR-1 Tabletop success. Fix the replay path before exposing.
     """
 
 
