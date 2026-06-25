@@ -22,7 +22,7 @@ TASK_NAMES=(
   "CoffeeSetupMug"  "CoffeeServeMug"  "CoffeePressButton"  "CloseSingleDoor"
   "CloseDrawer"  "CloseDoubleDoor"
 )
-N_GPUS=4
+N_GPUS=1
 TASKS_PER_GPU=6
 BASE_PORT=20100
 
@@ -35,7 +35,7 @@ run_shard() {
 
   echo "[shard ${gpu_id}] GPU=${gpu_id} PORT=${port} tasks=${start}..$((end-1))" | tee -a "$shard_log"
 
-  CUDA_VISIBLE_DEVICES=$gpu_id uv run python "$BASE_DIR/rldx/eval/run_rldx_server.py" \
+  RLDX_PATCHEMBED_FP32=1 RLDX_ATTN_IMPL=sdpa NO_ALBUMENTATIONS_UPDATE=1 CUDA_VISIBLE_DEVICES=$gpu_id uv run python "$BASE_DIR/rldx/eval/run_rldx_server.py" \
     --model-path "$MODEL_PATH" \
     --embodiment-tag GENERAL_EMBODIMENT \
     --use-sim-policy-wrapper \

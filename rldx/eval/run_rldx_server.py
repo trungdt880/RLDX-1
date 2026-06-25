@@ -75,6 +75,22 @@ class ServerConfig:
     use_sim_policy_wrapper: bool = False
     """Whether to use the sim policy wrapper"""
 
+    auto_batch_obs: bool = False
+    """If True, wrap the policy in ObsShapeAdapter so per-step obs shapes
+    (e.g. state (D,) -> (1,1,D), video (T,H,W,C) -> (1,T,H,W,C)) are promoted
+    to the batched (B, T, ...) form before validation. Convenience for clients
+    that send unbatched arrays; does NOT fabricate temporal history."""
+
+    save_frames: bool = False
+    """If True, save each incoming video.* frame to disk per get_action call.
+    Useful for inspecting what the client actually sends during live inference."""
+
+    save_frames_dir: str = "./server_frames"
+    """Directory for saved frames (when --save-frames)."""
+
+    save_frames_every: int = 1
+    """Save frames on every Nth get_action call (1 = every call)."""
+
     verbose: bool = False
     """Whether to print verbose debug logs during inference"""
 
@@ -209,6 +225,22 @@ def main(config: ServerConfig):
         from rldx.policy.rldx_policy import RLDXSimPolicyWrapper
 
         policy = RLDXSimPolicyWrapper(policy, strict=config.strict)
+
+    # Tolerate unbatched per-step obs from simple clients (opt-in).
+    if config.auto_batch_obs:
+        from rldx.policy.obs_shape_adapter import ObsShapeAdapter
+
+        policy = ObsShapeAdapter(policy)
+        print("  Auto-batch obs: ON (promotes (D,)->(1,1,D), (T,H,W,C)->(1,T,H,W,C))")
+
+    # Save incoming frames (opt-in). Outermost wrapper -> sees raw client obs.
+    if config.save_frames:
+        from rldx.policy.frame_logger import FrameSavingPolicy
+
+        policy = FrameSavingPolicy(
+            policy, outdir=config.save_frames_dir, every=config.save_frames_every
+        )
+        print(f"  Save frames: ON -> {config.save_frames_dir} (every {config.save_frames_every})")
 
     server = PolicyServer(
         policy=policy,
