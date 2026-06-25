@@ -63,4 +63,16 @@ if TYPE_CHECKING:
 # import. ``rldx.model.core.rldx`` runs ``AutoConfig.register("RLDX-1", ...)``
 # and ``AutoModel.register(...)``; ``rldx.model.core.processing_rldx`` runs
 # ``AutoProcessor.register(...)``.
-from rldx.model.core import processing_rldx as _processing_rldx, rldx as _rldx  # noqa: E402, F401
+#
+# Sim-eval clients (e.g. rldx/eval/rollout_policy.py in the robocasa venv)
+# only talk to a model served over zmq and never construct the model in
+# process. That client venv deliberately omits the heavy model deps
+# (transformers>=4.57, diffusers, dm-tree, ...) and pins an older numpy for
+# numba/robosuite, which conflicts with the model stack. Set
+# ``RLDX_SKIP_MODEL_REGISTRY=1`` there to skip the eager registration import
+# so ``import rldx`` stays lightweight; the served model already registered
+# itself in the server process.
+import os as _os  # noqa: E402
+
+if not _os.environ.get("RLDX_SKIP_MODEL_REGISTRY"):
+    from rldx.model.core import processing_rldx as _processing_rldx, rldx as _rldx  # noqa: E402, F401
