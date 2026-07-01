@@ -527,10 +527,31 @@ def any_gripper_obj_far(env, obj_name="obj", th=0.25):
     return left_is_far and right_is_far
 
 
+def robot_is_gripperless(env) -> bool:
+    """
+    True if the primary robot has no arms/grippers (e.g. the ALLEX humanoid,
+    which is ``arms=[]`` and therefore has no ``eef_site_id`` entries).
+
+    Such robots cannot satisfy any eef/gripper-based success or subtask signal,
+    so gripper-dependent helpers must short-circuit to a safe default instead of
+    raising ``KeyError: '<arm>'`` on ``eef_site_id``.
+    """
+    robot = env.robots[0]
+    return len(getattr(robot, "arms", [])) == 0 or not getattr(
+        robot, "eef_site_id", {}
+    )
+
+
 def gripper_obj_far_by_side(env, obj_name: str, gripper_side: str, th: float = 0.25):
     """
     check if gripper is far from object based on distance defined by threshold
     """
+    # ALLEX-safe: a gripperless robot (arms=[]) has no eef_site_id[side], so
+    # indexing it would raise KeyError. There is no gripper to be "near" the
+    # object, so it is trivially "far". This keeps the success/subtask path
+    # crash-free for gripper-absent robots (real ALLEX success is TODO below).
+    if gripper_side not in env.robots[0].eef_site_id:
+        return True
     obj_pos = env.sim.data.body_xpos[env.obj_body_id[obj_name]]
     gripper_site_pos = env.sim.data.site_xpos[env.robots[0].eef_site_id[gripper_side]]
     return np.linalg.norm(gripper_site_pos - obj_pos) > th

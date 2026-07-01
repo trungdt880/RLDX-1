@@ -5,3 +5,9 @@ from .gr1_robot import (
     GR1ArmsOnlyFourierHands,
     GR1ArmsAndWaistFourierHands,
 )
+from .allex_robot import (
+    AllexRobot,
+    AllexPositionRobot,
+    AllexCompositeController,
+    JointPositionPassthroughController,
+)

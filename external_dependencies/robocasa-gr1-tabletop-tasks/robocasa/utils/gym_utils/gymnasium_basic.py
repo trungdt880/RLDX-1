@@ -7,12 +7,27 @@ import robocasa  # we need this to register environments  # noqa: F401
 import robosuite
 from gymnasium import spaces
 from robocasa.environments.tabletop.tabletop import Tabletop
+import mujoco
+import robocasa as _robocasa_pkg
 from robocasa.models.robots import (
     GROOT_ROBOCASA_ENVS_GR1_ARMS_ONLY,
     GROOT_ROBOCASA_ENVS_GR1_ARMS_AND_WAIST,
     GROOT_ROBOCASA_ENVS_GR1_FIXED_LOWER_BODY,
+    GROOT_ROBOCASA_ENVS_ALLEX,
     gather_robot_observations,
     make_key_converter,
+)
+
+# ALLEX composite-controller config (6 passthrough parts named EXACTLY the 6
+# contract groups). Loaded explicitly so the robosuite basic.json fallback --
+# which rejects our part names -- is never used for ALLEX.
+ALLEX_CONTROLLER_CONFIG = os.path.join(
+    os.path.dirname(_robocasa_pkg.__file__),
+    "models",
+    "assets",
+    "robots",
+    "allex",
+    "default_allex_position.json",
 )
 from robosuite.controllers import load_composite_controller_config
 from robosuite.controllers.parts.arm.osc import OperationalSpaceController
@@ -99,10 +114,19 @@ class RoboCasaEnv(gym.Env):
         if camera_heights is None:
             camera_heights = default_camera_heights
 
-        controller_configs = load_composite_controller_config(
-            controller=None,
-            robot=robots_name.split("_")[0],
-        )
+        self._is_allex = robots_name in GROOT_ROBOCASA_ENVS_ALLEX
+        if self._is_allex:
+            # ALLEX uses its own composite passthrough controller (absolute joint
+            # position); do NOT apply the GR1 BASIC / control_delta override and
+            # do NOT fall through to basic.json (which rejects our part names).
+            controller_configs = load_composite_controller_config(
+                controller=ALLEX_CONTROLLER_CONFIG,
+            )
+        else:
+            controller_configs = load_composite_controller_config(
+                controller=None,
+                robot=robots_name.split("_")[0],
+            )
         if (
             robots_name in GROOT_ROBOCASA_ENVS_GR1_ARMS_ONLY
             or robots_name in GROOT_ROBOCASA_ENVS_GR1_ARMS_AND_WAIST
@@ -122,6 +146,11 @@ class RoboCasaEnv(gym.Env):
             enable_render=enable_render,
             **kwargs,  # Forward kwargs to create_env_robosuite
         )
+
+        # ALLEX: stiff <position> actuators need an implicit integrator; the
+        # robosuite arena defaults to Euler (Phase-1 gotcha). Applied here and
+        # re-applied after every reset (hard_reset rebuilds the MjModel).
+        self._apply_allex_physics_fixes()
 
         # TODO: the following info should be output by grootrobocasa
         self.camera_names = camera_names
@@ -183,6 +212,13 @@ class RoboCasaEnv(gym.Env):
         self.groot_exporter = None
         self.np_exporter = None
 
+    def _apply_allex_physics_fixes(self):
+        if not getattr(self, "_is_allex", False):
+            return
+        model = self.env.sim.model._model  # raw mujoco.MjModel
+        model.opt.integrator = mujoco.mjtIntegrator.mjINT_IMPLICITFAST
+        self.env.sim.forward()
+
     def get_basic_observation(self, raw_obs):
         raw_obs.update(gather_robot_observations(self.env))
 
@@ -213,6 +249,8 @@ class RoboCasaEnv(gym.Env):
     def reset(self, seed=None, options=None):
         np.random.seed(seed)
         raw_obs = self.env.reset()
+        # hard_reset rebuilds the MjModel -> re-apply the ALLEX integrator fix.
+        self._apply_allex_physics_fixes()
         # return obs
         obs = self.get_basic_observation(raw_obs)
 

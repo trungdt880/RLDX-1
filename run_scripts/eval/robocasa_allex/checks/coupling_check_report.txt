@@ -1,0 +1,222 @@
+
+===== hello  (1680 frames, 8.40s, dt=5.0ms, kp/kv=MJCF-nominal) =====
+  per-joint tracking error (deg):
+    joint                        group            RMS      max
+    R_Thumb_Yaw_Joint            right_hand     4.610   14.196
+    R_Elbow_Joint                right_arm      0.229    0.747
+    R_Shoulder_Yaw_Joint         right_arm      0.158    0.335
+    R_Shoulder_Pitch_Joint       right_arm      0.112    0.421
+    R_Wrist_Roll_Joint           right_arm      0.101    0.408
+    R_Middle_PIP_Joint           right_hand     0.100    0.376
+    R_Little_PIP_Joint           right_hand     0.091    0.329
+    R_Index_PIP_Joint            right_hand     0.086    0.355
+    Waist_Lower_Pitch_Joint      waist          0.083    0.309
+    Neck_Pitch_Joint             neck           0.079    0.477
+    R_Ring_PIP_Joint             right_hand     0.078    0.311
+    L_Wrist_Yaw_Joint            left_arm       0.078    0.264
+    R_Wrist_Yaw_Joint            right_arm      0.070    0.172
+    R_Thumb_CMC_Joint            right_hand     0.055    0.201
+    L_Shoulder_Yaw_Joint         left_arm       0.053    0.182
+    R_Shoulder_Roll_Joint        right_arm      0.044    0.148
+    L_Elbow_Joint                left_arm       0.042    0.158
+    R_Little_MCP_Joint           right_hand     0.040    0.154
+    L_Middle_PIP_Joint           left_hand      0.038    0.096
+    L_Index_PIP_Joint            left_hand      0.036    0.092
+    L_Little_PIP_Joint           left_hand      0.034    0.087
+    R_Index_MCP_Joint            right_hand     0.033    0.081
+    L_Ring_PIP_Joint             left_hand      0.033    0.084
+    R_Middle_MCP_Joint           right_hand     0.029    0.068
+    R_Ring_MCP_Joint             right_hand     0.029    0.073
+    L_Shoulder_Roll_Joint        left_arm       0.027    0.103
+    L_Index_MCP_Joint            left_hand      0.025    0.060
+    R_Thumb_MCP_Joint            right_hand     0.022    0.049
+    L_Thumb_CMC_Joint            left_hand      0.021    0.072
+    L_Middle_MCP_Joint           left_hand      0.018    0.059
+    L_Thumb_Yaw_Joint            left_hand      0.016    0.051
+    L_Wrist_Roll_Joint           left_arm       0.016    0.034
+    L_Little_MCP_Joint           left_hand      0.016    0.057
+    L_Shoulder_Pitch_Joint       left_arm       0.015    0.064
+    L_Ring_MCP_Joint             left_hand      0.015    0.058
+    R_Wrist_Pitch_Joint          right_arm      0.015    0.070
+    R_Index_ABAD_Joint           right_hand     0.015    0.043
+    L_Wrist_Pitch_Joint          left_arm       0.013    0.038
+    L_Thumb_MCP_Joint            left_hand      0.012    0.046
+    R_Ring_ABAD_Joint            right_hand     0.012    0.042
+    R_Little_ABAD_Joint          right_hand     0.012    0.047
+    R_Middle_ABAD_Joint          right_hand     0.011    0.042
+    Waist_Yaw_Joint              waist          0.010    0.055
+    L_Index_ABAD_Joint           left_hand      0.007    0.016
+    L_Ring_ABAD_Joint            left_hand      0.004    0.010
+    L_Middle_ABAD_Joint          left_hand      0.004    0.008
+    L_Little_ABAD_Joint          left_hand      0.002    0.005
+    Neck_Yaw_Joint               neck           0.001    0.003
+  per-group tracking error (deg):
+    left_arm    RMS=  0.041 max=   0.264 tol=5.0 OK
+    left_hand   RMS=  0.022 max=   0.096 tol=12.0 OK
+    neck        RMS=  0.056 max=   0.477 tol=5.0 OK
+    right_arm   RMS=  0.124 max=   0.747 tol=5.0 OK
+    right_hand  RMS=  1.191 max=  14.196 tol=12.0 OK
+    waist       RMS=  0.059 max=   0.309 tol=5.0 OK
+  equality coupling residuals (deg)  [follower<-driver]:
+    Waist_Lower_Pitch_Joint<-Waist_Upper_Pitch_Joint waist/rigid RMS=  0.0208 max=  0.0687
+    Waist_Lower_Pitch_Joint<-Waist_Pitch_Dummy_Joint waist/rigid RMS=  0.0027 max=  0.0153
+    L_Thumb_IP_Joint<-L_Thumb_MCP_Joint        finger/soft RMS=  0.0427 max=  0.1698
+    L_Index_DIP_Joint<-L_Index_PIP_Joint       finger/soft RMS=  0.0322 max=  0.1024
+    L_Middle_DIP_Joint<-L_Middle_PIP_Joint     finger/soft RMS=  0.0343 max=  0.1164
+    L_Ring_DIP_Joint<-L_Ring_PIP_Joint         finger/soft RMS=  0.0348 max=  0.1228
+    L_Little_DIP_Joint<-L_Little_PIP_Joint     finger/soft RMS=  0.0365 max=  0.1284
+    R_Thumb_IP_Joint<-R_Thumb_MCP_Joint        finger/soft RMS=  0.2431 max=  0.9990
+    R_Index_DIP_Joint<-R_Index_PIP_Joint       finger/soft RMS=  0.1352 max=  0.7134
+    R_Middle_DIP_Joint<-R_Middle_PIP_Joint     finger/soft RMS=  0.1585 max=  0.8112
+    R_Ring_DIP_Joint<-R_Ring_PIP_Joint         finger/soft RMS=  0.1558 max=  0.8465
+    R_Little_DIP_Joint<-R_Little_PIP_Joint     finger/soft RMS=  0.1895 max=  0.9785
+  stability: OK
+  VERDICT: PASS
+
+===== hello  (1680 frames, 8.40s, dt=5.0ms, kp/kv=MJCF-nominal) =====
+  per-joint tracking error (deg):
+    joint                        group            RMS      max
+    R_Thumb_Yaw_Joint            right_hand     4.610   14.196
+    R_Elbow_Joint                right_arm      0.229    0.747
+    R_Shoulder_Yaw_Joint         right_arm      0.158    0.335
+    R_Shoulder_Pitch_Joint       right_arm      0.112    0.421
+    R_Wrist_Roll_Joint           right_arm      0.101    0.408
+    R_Middle_PIP_Joint           right_hand     0.100    0.376
+    R_Little_PIP_Joint           right_hand     0.091    0.329
+    R_Index_PIP_Joint            right_hand     0.086    0.355
+    Waist_Lower_Pitch_Joint      waist          0.083    0.309
+    Neck_Pitch_Joint             neck           0.079    0.477
+    R_Ring_PIP_Joint             right_hand     0.078    0.311
+    L_Wrist_Yaw_Joint            left_arm       0.078    0.264
+    R_Wrist_Yaw_Joint            right_arm      0.070    0.172
+    R_Thumb_CMC_Joint            right_hand     0.055    0.201
+    L_Shoulder_Yaw_Joint         left_arm       0.053    0.182
+    R_Shoulder_Roll_Joint        right_arm      0.044    0.148
+    L_Elbow_Joint                left_arm       0.042    0.158
+    R_Little_MCP_Joint           right_hand     0.040    0.154
+    L_Middle_PIP_Joint           left_hand      0.038    0.096
+    L_Index_PIP_Joint            left_hand      0.036    0.092
+    L_Little_PIP_Joint           left_hand      0.034    0.087
+    R_Index_MCP_Joint            right_hand     0.033    0.081
+    L_Ring_PIP_Joint             left_hand      0.033    0.084
+    R_Middle_MCP_Joint           right_hand     0.029    0.068
+    R_Ring_MCP_Joint             right_hand     0.029    0.073
+    L_Shoulder_Roll_Joint        left_arm       0.027    0.103
+    L_Index_MCP_Joint            left_hand      0.025    0.060
+    R_Thumb_MCP_Joint            right_hand     0.022    0.049
+    L_Thumb_CMC_Joint            left_hand      0.021    0.072
+    L_Middle_MCP_Joint           left_hand      0.018    0.059
+    L_Thumb_Yaw_Joint            left_hand      0.016    0.051
+    L_Wrist_Roll_Joint           left_arm       0.016    0.034
+    L_Little_MCP_Joint           left_hand      0.016    0.057
+    L_Shoulder_Pitch_Joint       left_arm       0.015    0.064
+    L_Ring_MCP_Joint             left_hand      0.015    0.058
+    R_Wrist_Pitch_Joint          right_arm      0.015    0.070
+    R_Index_ABAD_Joint           right_hand     0.015    0.043
+    L_Wrist_Pitch_Joint          left_arm       0.013    0.038
+    L_Thumb_MCP_Joint            left_hand      0.012    0.046
+    R_Ring_ABAD_Joint            right_hand     0.012    0.042
+    R_Little_ABAD_Joint          right_hand     0.012    0.047
+    R_Middle_ABAD_Joint          right_hand     0.011    0.042
+    Waist_Yaw_Joint              waist          0.010    0.055
+    L_Index_ABAD_Joint           left_hand      0.007    0.016
+    L_Ring_ABAD_Joint            left_hand      0.004    0.010
+    L_Middle_ABAD_Joint          left_hand      0.004    0.008
+    L_Little_ABAD_Joint          left_hand      0.002    0.005
+    Neck_Yaw_Joint               neck           0.001    0.003
+  per-group tracking error (deg):
+    left_arm    RMS=  0.041 max=   0.264 tol=5.0 OK
+    left_hand   RMS=  0.022 max=   0.096 tol=12.0 OK
+    neck        RMS=  0.056 max=   0.477 tol=5.0 OK
+    right_arm   RMS=  0.124 max=   0.747 tol=5.0 OK
+    right_hand  RMS=  1.191 max=  14.196 tol=12.0 OK
+    waist       RMS=  0.059 max=   0.309 tol=5.0 OK
+  equality coupling residuals (deg)  [follower<-driver]:
+    Waist_Lower_Pitch_Joint<-Waist_Upper_Pitch_Joint waist/rigid RMS=  0.0208 max=  0.0687
+    Waist_Lower_Pitch_Joint<-Waist_Pitch_Dummy_Joint waist/rigid RMS=  0.0027 max=  0.0153
+    L_Thumb_IP_Joint<-L_Thumb_MCP_Joint        finger/soft RMS=  0.0427 max=  0.1698
+    L_Index_DIP_Joint<-L_Index_PIP_Joint       finger/soft RMS=  0.0322 max=  0.1024
+    L_Middle_DIP_Joint<-L_Middle_PIP_Joint     finger/soft RMS=  0.0343 max=  0.1164
+    L_Ring_DIP_Joint<-L_Ring_PIP_Joint         finger/soft RMS=  0.0348 max=  0.1228
+    L_Little_DIP_Joint<-L_Little_PIP_Joint     finger/soft RMS=  0.0365 max=  0.1284
+    R_Thumb_IP_Joint<-R_Thumb_MCP_Joint        finger/soft RMS=  0.2431 max=  0.9990
+    R_Index_DIP_Joint<-R_Index_PIP_Joint       finger/soft RMS=  0.1352 max=  0.7134
+    R_Middle_DIP_Joint<-R_Middle_PIP_Joint     finger/soft RMS=  0.1585 max=  0.8112
+    R_Ring_DIP_Joint<-R_Ring_PIP_Joint         finger/soft RMS=  0.1558 max=  0.8465
+    R_Little_DIP_Joint<-R_Little_PIP_Joint     finger/soft RMS=  0.1895 max=  0.9785
+  stability: OK
+  VERDICT: PASS
+
+===== demo1  (8541 frames, 42.70s, dt=5.0ms, kp/kv=per-frame) =====
+  per-joint tracking error (deg):
+    joint                        group            RMS      max
+    L_Thumb_Yaw_Joint            left_hand     19.719   84.307
+    R_Thumb_Yaw_Joint            right_hand    17.306   84.636
+    L_Shoulder_Pitch_Joint       left_arm       3.743   16.835
+    R_Shoulder_Roll_Joint        right_arm      3.477   18.009
+    L_Shoulder_Roll_Joint        left_arm       3.201   16.410
+    L_Elbow_Joint                left_arm       2.998   16.105
+    R_Shoulder_Pitch_Joint       right_arm      2.891   14.623
+    L_Thumb_CMC_Joint            left_hand      2.259   19.030
+    R_Wrist_Pitch_Joint          right_arm      2.243   19.988
+    R_Middle_MCP_Joint           right_hand     2.180   15.632
+    R_Index_MCP_Joint            right_hand     2.159   13.823
+    R_Ring_MCP_Joint             right_hand     1.511   11.584
+    R_Index_ABAD_Joint           right_hand     1.386    8.643
+    L_Little_MCP_Joint           left_hand      1.204    9.913
+    L_Ring_MCP_Joint             left_hand      1.125    9.103
+    R_Wrist_Yaw_Joint            right_arm      1.106    5.602
+    L_Wrist_Yaw_Joint            left_arm       1.100    5.342
+    L_Wrist_Pitch_Joint          left_arm       1.100    5.696
+    R_Little_MCP_Joint           right_hand     1.049    7.761
+    Waist_Lower_Pitch_Joint      waist          1.031    6.427
+    R_Elbow_Joint                right_arm      0.886    5.124
+    L_Index_ABAD_Joint           left_hand      0.835    6.275
+    L_Middle_MCP_Joint           left_hand      0.764    5.300
+    R_Little_ABAD_Joint          right_hand     0.698    7.063
+    L_Index_MCP_Joint            left_hand      0.646    3.769
+    L_Wrist_Roll_Joint           left_arm       0.620    2.666
+    R_Wrist_Roll_Joint           right_arm      0.547    4.176
+    R_Middle_ABAD_Joint          right_hand     0.479    3.285
+    R_Shoulder_Yaw_Joint         right_arm      0.473    2.683
+    L_Shoulder_Yaw_Joint         left_arm       0.445    1.795
+    R_Ring_ABAD_Joint            right_hand     0.390    3.450
+    R_Thumb_CMC_Joint            right_hand     0.255    1.365
+    R_Little_PIP_Joint           right_hand     0.241    1.208
+    L_Middle_ABAD_Joint          left_hand      0.235    2.784
+    L_Index_PIP_Joint            left_hand      0.221    1.222
+    L_Middle_PIP_Joint           left_hand      0.218    1.204
+    L_Ring_PIP_Joint             left_hand      0.185    0.849
+    R_Ring_PIP_Joint             right_hand     0.163    0.913
+    L_Little_PIP_Joint           left_hand      0.154    1.001
+    R_Thumb_MCP_Joint            right_hand     0.154    0.697
+    R_Middle_PIP_Joint           right_hand     0.151    0.771
+    L_Thumb_MCP_Joint            left_hand      0.150    0.990
+    R_Index_PIP_Joint            right_hand     0.129    0.876
+    L_Ring_ABAD_Joint            left_hand      0.098    0.621
+    L_Little_ABAD_Joint          left_hand      0.078    1.133
+    Waist_Yaw_Joint              waist          0.070    0.499
+    Neck_Yaw_Joint               neck           0.064    0.262
+    Neck_Pitch_Joint             neck           0.045    0.264
+  per-group tracking error (deg):
+    left_arm    RMS=  2.275 max=  16.835 tol=5.0 OK
+    left_hand   RMS=  5.155 max=  84.307 tol=12.0 OK
+    neck        RMS=  0.055 max=   0.264 tol=5.0 OK
+    right_arm   RMS=  2.000 max=  19.988 tol=5.0 OK
+    right_hand  RMS=  4.585 max=  84.636 tol=12.0 OK
+    waist       RMS=  0.731 max=   6.427 tol=5.0 OK
+  equality coupling residuals (deg)  [follower<-driver]:
+    Waist_Lower_Pitch_Joint<-Waist_Upper_Pitch_Joint waist/rigid RMS=  0.0366 max=  0.3054
+    Waist_Lower_Pitch_Joint<-Waist_Pitch_Dummy_Joint waist/rigid RMS=  0.0055 max=  0.0621
+    L_Thumb_IP_Joint<-L_Thumb_MCP_Joint        finger/soft RMS=  7.3701 max= 26.6216
+    L_Index_DIP_Joint<-L_Index_PIP_Joint       finger/soft RMS= 12.6103 max= 69.4603
+    L_Middle_DIP_Joint<-L_Middle_PIP_Joint     finger/soft RMS=  8.9739 max= 47.2017
+    L_Ring_DIP_Joint<-L_Ring_PIP_Joint         finger/soft RMS=  6.8971 max= 38.2756
+    L_Little_DIP_Joint<-L_Little_PIP_Joint     finger/soft RMS=  4.8302 max= 29.0946
+    R_Thumb_IP_Joint<-R_Thumb_MCP_Joint        finger/soft RMS= 14.9323 max= 45.4718
+    R_Index_DIP_Joint<-R_Index_PIP_Joint       finger/soft RMS=  4.2294 max= 30.4433
+    R_Middle_DIP_Joint<-R_Middle_PIP_Joint     finger/soft RMS=  2.9521 max= 23.8986
+    R_Ring_DIP_Joint<-R_Ring_PIP_Joint         finger/soft RMS=  4.0749 max= 26.8753
+    R_Little_DIP_Joint<-R_Little_PIP_Joint     finger/soft RMS= 10.6322 max= 49.1526
+  stability: OK
+  VERDICT: PASS

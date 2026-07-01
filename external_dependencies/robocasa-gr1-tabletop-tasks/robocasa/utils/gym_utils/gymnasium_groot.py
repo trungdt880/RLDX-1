@@ -8,6 +8,7 @@ from gymnasium.envs.registration import register
 
 from robocasa.models.robots import GROOT_ROBOCASA_ENVS_ROBOTS
 from robocasa.models.robots.manipulators.gr1_robot import GR1ArmsOnly, GR1ArmsAndWaist
+from robocasa.models.robots.manipulators.allex_robot import AllexRobot
 from .gymnasium_basic import (
     REGISTERED_ENVS,
     RoboCasaEnv,
@@ -42,6 +43,11 @@ class GrootRoboCasaEnv(RoboCasaEnv):
             self.observation_space["annotation.human.coarse_action"] = spaces.Text(
                 max_length=256, charset=ALLOWED_LANGUAGE_CHARSET
             )
+        elif isinstance(self.env.robots[0].robot_model, AllexRobot):
+            # ALLEX contract (sec.10) language key: annotation.human.task_description
+            self.observation_space[
+                "annotation.human.task_description"
+            ] = spaces.Text(max_length=256, charset=ALLOWED_LANGUAGE_CHARSET)
         else:
             self.observation_space[
                 "annotation.human.action.task_description"
@@ -113,6 +119,8 @@ class GrootRoboCasaEnv(RoboCasaEnv):
             obs[
                 "annotation.human.coarse_action"
             ] = f"unlocked_waist: {raw_obs['language']}"
+        elif isinstance(self.env.robots[0].robot_model, AllexRobot):
+            obs["annotation.human.task_description"] = raw_obs["language"]
         else:
             obs["annotation.human.action.task_description"] = raw_obs["language"]
         return obs

@@ -1,0 +1,12 @@
+=== HYPOTHESIS ordering: 2 GROSS + 4 minor out-of-range across 48 channels ===
+   minor left_hand_joints[1]=L_Thumb_CMC_Joint: band[-0.146,1.342] vs range[0.000,1.571] escape=0.096
+   minor left_hand_joints[7]=L_Middle_MCP_Joint: band[-0.029,1.738] vs range[-0.175,1.571] escape=0.117
+   minor left_hand_joints[10]=L_Ring_MCP_Joint: band[-0.050,1.838] vs range[-0.175,1.571] escape=0.217
+   minor left_hand_joints[13]=L_Little_MCP_Joint: band[-0.193,1.805] vs range[-0.175,1.571] escape=0.184
+   GROSS right_hand_joints[8]=R_Middle_PIP_Joint: band[-1.377,1.605] vs range[0.000,1.920] escape=1.327
+   GROSS right_hand_joints[11]=R_Ring_PIP_Joint: band[-0.608,0.654] vs range[0.000,1.920] escape=0.558
+
+=== discriminativeness: 500/500 random hand-permutations strictly WORSE than hypothesis; 0 tied ===
+
+VERDICT: intra-group ordering STRONGLY SUPPORTED (uniquely-best; few wide/noisy channels)
+NOTE: byte-exact confirmation still requires the real_allex dataset meta/modality.json; this test rules out gross mis-ordering.

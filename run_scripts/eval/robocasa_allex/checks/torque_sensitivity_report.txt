@@ -1,0 +1,12 @@
+
+ mean|Δaction| omit->mean-torque = 0.1178 rad (67.3% of state-baseline)
+ mean|Δaction| omit->q99-torque  = 0.1184 rad (67.6% of state-baseline)
+ mean|Δaction| mean->q99 torque  = 0.0522 rad
+
+ present-vs-omit gap = 0.1184 rad (68% of state-baseline) = how far an OOD surrogate would pull actions
+ magnitude sensitivity (mean->q99) = 0.0522 rad
+
+GATE READING: OMIT torque at rollout (mask=0 is trained via 0.3 dropout -> in-distribution & safe). Do NOT feed a MuJoCo torque surrogate: it is OOD and would perturb actions by ~0.118 rad in an uncontrolled direction.
+CAVEAT: Real deployment runs WITH torque (mask=1); sim runs mask=0 -> a different (but trained) operating mode. Log as a harness caveat.
+
+VERDICT [0.5b]: GO with torque OMITTED (surrogate-OOD risk=0.1184 rad avoided by omitting)

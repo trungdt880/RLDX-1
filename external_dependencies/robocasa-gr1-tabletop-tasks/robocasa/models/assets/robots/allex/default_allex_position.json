@@ -1,0 +1,36 @@
+{
+    "type": "ALLEX_JOINT_POSITION",
+    "composite_controller_specific_configs": {},
+    "body_parts": {
+        "left_arm_joints": {
+            "type": "JOINT_POSITION_PASSTHROUGH",
+            "input_type": "absolute",
+            "interpolation": null
+        },
+        "left_hand_joints": {
+            "type": "JOINT_POSITION_PASSTHROUGH",
+            "input_type": "absolute",
+            "interpolation": null
+        },
+        "neck_joints": {
+            "type": "JOINT_POSITION_PASSTHROUGH",
+            "input_type": "absolute",
+            "interpolation": null
+        },
+        "right_arm_joints": {
+            "type": "JOINT_POSITION_PASSTHROUGH",
+            "input_type": "absolute",
+            "interpolation": null
+        },
+        "right_hand_joints": {
+            "type": "JOINT_POSITION_PASSTHROUGH",
+            "input_type": "absolute",
+            "interpolation": null
+        },
+        "waist_joints": {
+            "type": "JOINT_POSITION_PASSTHROUGH",
+            "input_type": "absolute",
+            "interpolation": null
+        }
+    }
+}

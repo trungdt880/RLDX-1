@@ -65,6 +65,13 @@ class TabletopEnvMeta(EnvMeta):
 
 
 _ROBOT_POS_OFFSETS: dict[str, list[float]] = {
+    # ALLEX: fixed-base humanoid; Base_Link sits ~0.685 m above the feet, so it
+    # must mount elevated to clear the table/floor (Phase-1 gotcha). z tuned to
+    # match the GR1 humanoids that share this tabletop scene.
+    # [x, y_depth, z_height]: y<0 moves ALLEX BACK from the counter. -0.4 clears
+    # the table for the arm-gesture replays (0 hand-table contacts); reduce toward
+    # 0 for manipulation tasks that need the robot to reach the counter.
+    "AllexRobot": [0, -0.4, 0.9],
     "GR1FloatingBody": [0, 0, 0.97],
     "GR1": [0, 0, 0.97],
     "GR1FixedLowerBody": [0, 0, 0.97],
@@ -1586,6 +1593,17 @@ class Tabletop(ManipulationEnv, metaclass=TabletopEnvMeta):
             float: Reward for the task
         """
         reward = 0
+        # ALLEX-safe: gripper-absent robots (arms=[]) cannot satisfy the
+        # eef/gripper-based ``_check_success`` used by the tabletop tasks, and
+        # those helpers assume ``robots[0].eef_site_id['left'|'right']`` exists.
+        # For such robots we return a safe no-op reward (success=False) so full
+        # episodes run to completion without a KeyError. This is a HARNESS stub:
+        # it makes NO success claim for gripperless robots.
+        # TODO(ALLEX): implement a gripperless success metric based on object
+        #   proximity to its target (e.g. OU.check_obj_in_receptacle), NOT on
+        #   eef sites, and return 1.0 when that geometric condition holds.
+        if OU.robot_is_gripperless(self):
+            return reward
         if self._check_success():
             reward = 1.0
         return reward

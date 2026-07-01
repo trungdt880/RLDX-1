@@ -52,6 +52,26 @@ def _reconstruct_latest_action_gr1_impl(robot, verbose=False):
     return action_dict
 
 
+def _reconstruct_latest_action_allex_impl(robot, verbose=False):
+    # ALLEX: every part is a JointPositionPassthroughController whose absolute
+    # goal qpos IS the latest commanded action (radians). Before the first
+    # set_goal the goal is None -> fall back to the measured joint position.
+    action_dict = {}
+    cc = robot.composite_controller
+    pf = robot.robot_model.naming_prefix
+
+    for part_name, controller in cc.part_controllers.items():
+        act = getattr(controller, "goal_qpos", None)
+        if act is None:
+            act = np.asarray(controller.joint_pos, dtype=np.float64)
+        action_dict[f"{pf}{part_name}"] = np.asarray(act, dtype=np.float64)
+
+    if verbose:
+        print("Actions:", [(k, len(action_dict[k])) for k in action_dict])
+
+    return action_dict
+
+
 def _reconstruct_latest_action_panda_impl(robot, action, verbose=False):
     action_dict = {}
     cc = robot.composite_controller
@@ -83,6 +103,8 @@ def reconstruct_latest_actions(env, actions=None, verbose=False):
         cutoff += robot.action_dim
         if "GR1" in robot.name:
             action_dict.update(_reconstruct_latest_action_gr1_impl(robot))
+        elif "Allex" in robot.name:
+            action_dict.update(_reconstruct_latest_action_allex_impl(robot))
         elif "Panda" in robot.name:
             action_dict.update(
                 _reconstruct_latest_action_panda_impl(robot, robot_action)
@@ -697,6 +719,89 @@ class PandaDexRHPandaDexRHKeyConverter(RobotKeyConverter):
             }
 
 
+class AllexKeyConverter(RobotKeyConverter):
+    """GROOT key-converter for the 48-DoF ALLEX humanoid (RLDX-1-MT-ALLEX).
+
+    Speaks the FROZEN ALLEX contract
+    (run_scripts/eval/robocasa_allex/contract/allex_contract.md):
+
+      * video : ONE ego-left camera -> GROOT key ``video.camera_ego_left`` (mono,
+                rendered/resized to 256x256). The RLDX from-scratch client's
+                ``sim_key_for_video`` falls back to ``video.<canonical>`` so the
+                model's ``camera_ego_left`` maps here with no client-side entry.
+      * state : the 6 contract groups (absolute joint angles, radians). The
+                robosuite ``AllexPositionRobot`` names its 6 controller parts
+                EXACTLY the contract group names, so
+                ``gather_robot_observations`` emits ``robot0_<group>``. We rename
+                each to ``body.<group>`` / ``hand.<group>``; GrootRoboCasaEnv then
+                strips the 5-char prefix -> ``state.<group>`` (the flat state keys
+                the client sends 1:1).
+      * action: same 6 groups, ABSOLUTE joint targets. unmap_action (policy->env)
+                yields the dict RoboCasaEnv.step expects: keys ``robot0_<group>``.
+      * TORQUE IS OMITTED (gate decision: mask=0 is in-distribution). No physics.
+
+    Group -> prefix: arms/neck/waist use ``body.``, hands use ``hand.`` (the
+    5-char strip is identical either way; this just mirrors GR1 semantics).
+    """
+
+    # (robosuite part / gather-obs group, GROOT prefix)
+    _GROUPS = [
+        ("left_arm_joints", "body"),
+        ("left_hand_joints", "hand"),
+        ("neck_joints", "body"),
+        ("right_arm_joints", "body"),
+        ("right_hand_joints", "hand"),
+        ("waist_joints", "body"),
+    ]
+
+    @classmethod
+    def get_camera_config(cls):
+        # Single mono ego-left camera. The ALLEX head chain carries the ZED-mini
+        # left optical frame (robot.xml); robosuite prefixes robot cameras with
+        # the robot's naming_prefix -> "robot0_zed_left_camera_optical_frame".
+        mapped_names = ["video.camera_ego_left"]
+        camera_names = ["robot0_zed_left_camera_optical_frame"]
+        # Render square at the GROOT target resolution (process_img is then a
+        # no-op) so no GR1-style crop path is triggered.
+        camera_widths, camera_heights = 256, 256
+        return mapped_names, camera_names, camera_widths, camera_heights
+
+    @classmethod
+    def map_obs(cls, input_obs):
+        output_obs = type(input_obs)()
+        for group, prefix in cls._GROUPS:
+            output_obs[f"{prefix}.{group}"] = input_obs[f"robot0_{group}"]
+        return output_obs
+
+    @classmethod
+    def map_action(cls, input_action):
+        # env -> policy (used by deduce_action_space + dataset dumping). Input is
+        # keyed robot0_<group> (see reconstruct_latest_actions / Allex impl).
+        output_action = type(input_action)()
+        for group, prefix in cls._GROUPS:
+            output_action[f"{prefix}.{group}"] = input_action[f"robot0_{group}"]
+        return output_action
+
+    @classmethod
+    def unmap_action(cls, input_action):
+        # policy -> env. GROOT action space keys are "action.<group>" (deduced
+        # from map_action's body./hand. keys). Emit the dict RoboCasaEnv.step
+        # pops: keyed "robot0_<group>" (naming_prefix + part_name).
+        output_action = type(input_action)()
+        for group, _prefix in cls._GROUPS:
+            output_action[f"robot0_{group}"] = input_action[f"action.{group}"]
+        return output_action
+
+    @classmethod
+    def get_metadata(cls, name):
+        # All 6 groups are absolute joint-position targets; no EEF rotation, no
+        # torque/effort. (matches allex_contract sec.4)
+        return {
+            "absolute": True,
+            "rotation_type": None,
+        }
+
+
 # The values are only used in groot dataset embodiment tag and env name
 GROOT_ROBOCASA_ENVS_GR1_ARMS_ONLY = {
     "GR1ArmsOnly": "gr1_arms_only_fourier_hands",
@@ -721,6 +826,9 @@ GROOT_ROBOCASA_ENVS_BIMANUAL_GRIPPER = {
 GROOT_ROBOCASA_ENVS_BIMANUAL_HAND = {
     "PandaDexRH_PandaDexLH": "bimanual_panda_inspire_hand",
 }
+GROOT_ROBOCASA_ENVS_ALLEX = {
+    "AllexRobot": "allex",
+}
 GROOT_ROBOCASA_ENVS_ROBOTS = {
     **GROOT_ROBOCASA_ENVS_GR1_ARMS_ONLY,
     **GROOT_ROBOCASA_ENVS_GR1_ARMS_AND_WAIST,
@@ -728,6 +836,7 @@ GROOT_ROBOCASA_ENVS_ROBOTS = {
     **GROOT_ROBOCASA_ENVS_PANDA,
     **GROOT_ROBOCASA_ENVS_BIMANUAL_GRIPPER,
     **GROOT_ROBOCASA_ENVS_BIMANUAL_HAND,
+    **GROOT_ROBOCASA_ENVS_ALLEX,
 }
 
 
@@ -744,5 +853,7 @@ def make_key_converter(robots_name):
         return PandaPandaKeyConverter
     elif robots_name in GROOT_ROBOCASA_ENVS_BIMANUAL_HAND:
         return PandaDexRHPandaDexRHKeyConverter
+    elif robots_name in GROOT_ROBOCASA_ENVS_ALLEX:
+        return AllexKeyConverter
     else:
         raise ValueError(f"Unknown robot name: {robots_name}")

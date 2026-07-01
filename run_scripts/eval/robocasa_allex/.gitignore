@@ -1,0 +1,9 @@
+# generated rollout videos / frames / logs
+rollout/
+*.log
+# python caches
+__pycache__/
+*.pyc
+contract/__pycache__/
+checks/__pycache__/
+*.pid
