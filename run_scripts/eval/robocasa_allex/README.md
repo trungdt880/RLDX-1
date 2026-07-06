@@ -10,6 +10,10 @@ end-to-end, stably. This is a **harness — no task-success claim** (the checkpo
 trained on real ALLEX data only; sim success is dominated by the visual+dynamics
 domain gap and is not evaluated here).
 
+> **Just want the sim (scenes + trajectory replay), not the RLDX-1 model?**
+> See [`SIM_ONLY_SETUP.md`](./SIM_ONLY_SETUP.md) — one command
+> (`setup_sim.sh`) sets up ALLEX-in-RoboCasa with no checkpoint/server.
+
 ---
 
 ## What was built
