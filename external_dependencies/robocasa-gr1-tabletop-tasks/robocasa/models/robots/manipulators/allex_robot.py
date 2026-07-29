@@ -209,6 +209,7 @@ class JointPositionPassthroughController(Controller):
         naming_prefix=None,
         lite_physics=True,
         policy_freq=20,
+        interpolate=True,
         **kwargs,  # sink JSON extras (type, input_max, ramp_ratio, ndim, ...)
     ):
         super().__init__(
@@ -232,6 +233,21 @@ class JointPositionPassthroughController(Controller):
         self.output_max = self.actuator_max
         self.goal_qpos = None
 
+        # --- target interpolation (anti-shake) -------------------------------
+        # ALLEX's position servos are very underdamped (e.g. L_Shoulder_Pitch
+        # kp=5000 kv=8.22 -> zeta~0.06, ringing ~11 Hz). Holding one target
+        # constant for a whole control period (25 substeps at 20 Hz / 2 ms) is a
+        # STEP input that excites that ringing, and the executed motion overshoots
+        # the commanded step by ~3x. Ramping the target across the control period
+        # (what a real robot's trajectory interpolator does) removes the step
+        # excitation. See checks/smoothness_check.py.
+        self.interpolate = bool(interpolate)
+        self.start_qpos = None
+        self._substep = 0
+        self._n_substeps = max(
+            1, int(round((1.0 / float(self.control_freq)) / self.sim.model.opt.timestep))
+        )
+
     def set_goal(self, action, set_qpos=None):
         self.update()
         action = np.asarray(action, dtype=np.float64).flatten()
@@ -244,6 +260,14 @@ class JointPositionPassthroughController(Controller):
             goal = action
         else:  # delta
             goal = np.asarray(self.joint_pos, dtype=np.float64) + action
+        # ramp from the PREVIOUS target (not the measured qpos) so consecutive
+        # control periods chain into one continuous target trajectory
+        self.start_qpos = (
+            np.array(self.goal_qpos, dtype=np.float64)
+            if self.goal_qpos is not None
+            else np.array(self.joint_pos, dtype=np.float64)
+        )
+        self._substep = 0
         self.goal_qpos = np.clip(goal, self.actuator_min, self.actuator_max)
 
     def run_controller(self):
@@ -251,10 +275,16 @@ class JointPositionPassthroughController(Controller):
             self.goal_qpos = np.array(self.joint_pos, dtype=np.float64)
         self.update()
         super().run_controller()  # resets new_update flag
-        return np.array(self.goal_qpos, dtype=np.float64)
+        if not self.interpolate or self.start_qpos is None:
+            return np.array(self.goal_qpos, dtype=np.float64)
+        self._substep += 1
+        alpha = min(1.0, self._substep / self._n_substeps)
+        return self.start_qpos + (self.goal_qpos - self.start_qpos) * alpha
 
     def reset_goal(self):
         self.goal_qpos = np.array(self.joint_pos, dtype=np.float64)
+        self.start_qpos = np.array(self.joint_pos, dtype=np.float64)
+        self._substep = self._n_substeps
 
     @property
     def control_limits(self):

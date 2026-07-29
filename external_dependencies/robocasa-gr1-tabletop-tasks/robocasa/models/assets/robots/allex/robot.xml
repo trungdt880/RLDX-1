@@ -220,7 +220,11 @@
 
                   <!-- ZED Mini: RGB 102°×57°, ideal range 0.1–9 m -->                  
                   <body name="zed_camera_link" pos="0.067225 0 0.0145">
-                    <camera name="zed_left_camera_optical_frame" pos="0.000 0.032 0.013" quat="-0.5 -0.5 0.5 0.5" fovy="57" />
+                    <!-- +10mm along the housing axis puts the optical origin at the lens
+                         aperture instead of inside the ZED/head shell. At the stock 0.000 the
+                         render is occluded by Neck_Yaw_Cam/Neck_Yaw_Head (14% of pixels black,
+                         mean luminance 131 vs 244). See checks/ego_camera_check.py. -->
+                    <camera name="zed_left_camera_optical_frame" pos="0.010 0.032 0.013" quat="-0.5 -0.5 0.5 0.5" fovy="57" />
                     <!-- <camera name="zed_right_optical_frame" pos="0.000, -0.032, 0.013" quat="-0.5 -0.5 0.5 0.5" fovy="57"/> -->
                   </body>
                 </body>

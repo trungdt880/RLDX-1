@@ -66,12 +66,30 @@ class TabletopEnvMeta(EnvMeta):
 
 _ROBOT_POS_OFFSETS: dict[str, list[float]] = {
     # ALLEX: fixed-base humanoid; Base_Link sits ~0.685 m above the feet, so it
-    # must mount elevated to clear the table/floor (Phase-1 gotcha). z tuned to
-    # match the GR1 humanoids that share this tabletop scene.
-    # [x, y_depth, z_height]: y<0 moves ALLEX BACK from the counter. -0.4 clears
-    # the table for the arm-gesture replays (0 hand-table contacts); reduce toward
-    # 0 for manipulation tasks that need the robot to reach the counter.
-    "AllexRobot": [0, -0.4, 0.9],
+    # must mount elevated to clear the table/floor (Phase-1 gotcha).
+    # [x, y_depth, z_height]: y<0 moves ALLEX BACK from the counter.
+    # z=0.55 is set by the EGO VIEW, not by clearance: at the previous z=0.9 the
+    # head camera at the training-mean neck pitch (0.385 rad) pointed at a blank
+    # wall -- only ~50% of the lower frame held any task content, so the policy's
+    # sole visual input was out-of-distribution. At 0.55 the tabletop + objects +
+    # both hands fill the frame like real ALLEX capture (~0.81). See
+    # checks/mount_sweep.py.
+    # y=-0.35: modestly closer than the original -0.4, chosen on measured
+    # contact rather than reach. Reach is NOT the binding constraint -- an
+    # earlier -0.2 was picked from a palm-ORIGIN distance, which understates
+    # grasp reach by the ~8-10 cm of finger beyond the palm; measured to the
+    # hand bodies, can and bowl are reachable at every offset in [0.2, 0.4].
+    # Resting hand-vs-table contacts are what differ: ~34/step at -0.33,
+    # 2-23 at -0.35, 1 at -0.40. The robot never contacts the objects at rest
+    # (0 robot-object contacts over 150 steps x 3 seeds at any offset).
+    # See checks/object_disturbance.py.
+    # z=0.62 rather than 0.55: at 0.55 the resting hands press ~39 mm INTO the
+    # table, which the underdamped servos turn into a visible start-of-scene
+    # buzz. 0.62 cuts penetration to ~6 mm (12 contacts) while keeping both
+    # objects reachable (~0.02 m) and the ego view framed. See
+    # checks/mount_tradeoff.py, which scores contact/reach/view together --
+    # tuning them one at a time makes each fix break another.
+    "AllexRobot": [0, -0.35, 0.62],
     "GR1FloatingBody": [0, 0, 0.97],
     "GR1": [0, 0, 0.97],
     "GR1FixedLowerBody": [0, 0, 0.97],
